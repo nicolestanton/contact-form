@@ -1,19 +1,40 @@
+import { MongoClient } from "mongodb";
+
+const uri = `mongodb+srv://nastanton4:${process.env.DB_PASSWORD}@contact.usu4s.mongodb.net/?retryWrites=true&w=majority&appName=contact`;
+const client = new MongoClient(uri);
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  try {    
-    if (!req.body.name || !req.body.contact) {
+  try {
+    await client.connect();
+    console.log("connected");
+    const db = client.db("contactList");
+    const collection = db.collection("contacts");
+
+    const data = req.body;
+
+    // validation
+    if (!data.name || !data.contact) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    const result = await collection.insertOne({
+      name: data.name,
+      contact: data.contact,
+      createdAt: new Date(),
+    });
+
     return res.status(200).json({
-      message: "Data received",
-      data: req.body,
+      message: "Contact saved",
+      data: result,
     });
   } catch (error) {
     console.error("Error:", error);
-    return res.status(500).json({ message: "Error processing data" });
+    return res.status(500).json({ message: "Error saving contact" });
+  } finally {
+    await client.close();
   }
 }
