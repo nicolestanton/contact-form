@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 
-const uri = `mongodb+srv://nastanton4:${process.env.DB_PASSWORD}@contact.usu4s.mongodb.net/?retryWrites=true&w=majority&appName=contact`;
+const uri = `mongodb+srv://${process.env.DB_EMAIL}:${process.env.DB_PASSWORD}@contact.usu4s.mongodb.net/?retryWrites=true&w=majority&appName=contact`;
 const client = new MongoClient(uri);
 
 export default async function handler(req, res) {
@@ -17,12 +17,13 @@ export default async function handler(req, res) {
     const data = req.body;
 
     // validation
-    if (!data.name || !data.contact) {
+    if (!data.name || !data.contact || !data.occupation) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     const result = await collection.insertOne({
       name: data.name,
+      occupation: data.occupation,
       contact: data.contact,
       createdAt: new Date(),
     });
