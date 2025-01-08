@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const data = req.body;
 
     // validation
-    if (!data.name || !data.contact || !data.occupation) {
+    if (!data.name || !data.occupation) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 

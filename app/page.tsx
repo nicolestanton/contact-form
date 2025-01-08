@@ -5,11 +5,19 @@ import { useState } from "react";
 import { Button } from "./Components/Button/Button";
 import { Input } from "./Components/Input/Input";
 import { Checkbox } from "./Components/CheckBox/CheckBox";
+import { Modal } from "./Components/Modal/Modal";
+import { validateEmail } from "./Helpers";
+import classNames from "classnames";
 
 type FormData = {
   name: string;
   contact: string;
   occupation: string;
+};
+
+type messageTypes = {
+  message: string;
+  error: boolean;
 };
 
 export default function Home() {
@@ -19,8 +27,15 @@ export default function Home() {
     occupation: "",
   };
 
+  const messageState = {
+    message: "",
+    error: false,
+  };
+
   const [formData, setFormData] = useState<FormData>(initialFormState);
-  const [checked, setChecked] = useState<boolean>(false);
+  const [checked, setChecked] = useState<boolean>();
+  const [message, setMessage] = useState<messageTypes>(messageState);
+  const [openModal, setOpenModal] = useState<boolean>(false);
 
   const handleContactInfo = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -29,29 +44,53 @@ export default function Home() {
     setFormData((prevState) => ({ ...prevState, [input]: event.target.value }));
   };
 
+  const clearMessage = () => {
+    return setTimeout(() => setMessage({ message: "", error: false }), 2000);
+  };
+
   const handleFormData = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    try {
-      const response = await fetch("/api/contacts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+    const hasValidEmail =
+      !formData.contact ||
+      (formData.contact && validateEmail(formData.contact));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (checked && hasValidEmail) {
+      try {
+        const response = await fetch("/api/contacts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Success:", data);
+        setMessage({ message: "info added", error: false });
+
+        clearMessage();
+
+        setChecked(false);
+        // Clear form after successful submission
+        setFormData(initialFormState);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    } else {
+      if (!hasValidEmail) {
+        setMessage({ message: "invalid email address", error: true });
+        clearMessage();
       }
 
-      const data = await response.json();
-      console.log("Success:", data);
-
-      // Clear form after successful submission
-      setFormData(initialFormState);
-    } catch (error) {
-      console.error("Error:", error);
+      if (!checked) {
+        setMessage({ message: "check the box", error: true });
+        clearMessage();
+      }
     }
   };
 
@@ -59,9 +98,14 @@ export default function Home() {
     setChecked(!checked);
   };
 
+  const handleModal = () => {
+    setOpenModal(!openModal);
+  };
+
   return (
     <div className="flex justify-center items-center h-screen w-screen bg-blue-50">
-      <main className="flex flex-col items-center p-6 bg-white w-9/12 shadow rounded-lg">
+      {openModal && <Modal handleClick={handleModal} />}
+      <main className="z-40 flex flex-col items-center p-6 bg-white w-9/12 shadow rounded-lg">
         <h1 className="text-lg font-sans font-semibold p-4 text-blue-900">
           Contact form
         </h1>
@@ -88,11 +132,22 @@ export default function Home() {
           />
           <Input
             handleOnChange={(e: any) => handleContactInfo(e, "contact")}
-            label="Contact"
+            label="Email Address"
             value={formData.contact}
-            type="text"
+            type="email"
           />
-          <Checkbox handleOnChange={handleCheckbox} />
+          {message && (
+            <span className={classNames("text-center", message.error ? "text-red-700"  : "text-green-900")}>{message.message}</span>
+          )}
+          <div className="text-blue-900 m-auto m-0 flex items-center">
+            <Checkbox handleOnChange={handleCheckbox} />
+            <span className="pl-2 text-xs">
+              To find out what happens with the data you enter{" "}
+              <a className="underline cursor-pointer" onClick={handleModal}>
+                Click here
+              </a>
+            </span>
+          </div>
           <Button
             className="m-auto m-0"
             type="submit"

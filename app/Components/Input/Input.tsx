@@ -46,7 +46,7 @@ export const Input = ({
         peer-focus:text-blue-900
         ${
           isFocused || value
-            ? "-top-6 text-xs text-blue-900"
+            ? "-top-2 text-xs text-blue-900"
             : "top-2 text-gray-400"
         }
       `}
