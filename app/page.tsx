@@ -7,7 +7,7 @@ import { Input } from "./Components/Input/Input";
 import { Checkbox } from "./Components/CheckBox/CheckBox";
 import { Modal } from "./Components/Modal/Modal";
 import { validateEmail } from "./Helpers";
-import classNames from "classnames";
+import ErrorMessage from "./Components/ErrorMessage/ErrorMessage";
 
 type FormData = {
   name: string;
@@ -19,6 +19,11 @@ type messageTypes = {
   message: string;
   error: boolean;
 };
+
+type errorType = {
+  statusCode: number;
+  message: string;
+} | null;
 
 export default function Home() {
   const initialFormState = {
@@ -36,16 +41,21 @@ export default function Home() {
   const [checked, setChecked] = useState<boolean>();
   const [message, setMessage] = useState<messageTypes>(messageState);
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const [error, setError] = useState<errorType>();
 
   const handleContactInfo = (
     event: React.ChangeEvent<HTMLInputElement>,
     input: string
   ) => {
+    setError(null);
     setFormData((prevState) => ({ ...prevState, [input]: event.target.value }));
   };
 
   const clearMessage = () => {
-    return setTimeout(() => setMessage({ message: "", error: false }), 2000);
+    return setTimeout(() => {
+      setMessage({ message: "", error: false });
+      setError(null);
+    }, 2000);
   };
 
   const handleFormData = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -55,42 +65,51 @@ export default function Home() {
       !formData.contact ||
       (formData.contact && validateEmail(formData.contact));
 
-    if (checked && hasValidEmail) {
-      try {
-        const response = await fetch("/api/contacts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+    if (!hasValidEmail) {
+      setMessage({ message: "🥸 Invalid email address", error: true });
+      clearMessage();
+      return;
+    }
+
+    if (!checked) {
+      setMessage({ message: "🤖 Oops! You forgot to check the checkbox", error: true });
+      clearMessage();
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/contacts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        setError({
+          statusCode: response.status,
+          message: errorMessage || `Error submitting form (${response.status})`,
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Success:", data);
-        setMessage({ message: "info added", error: false });
-
-        clearMessage();
-
-        setChecked(false);
-        // Clear form after successful submission
-        setFormData(initialFormState);
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    } else {
-      if (!hasValidEmail) {
-        setMessage({ message: "invalid email address", error: true });
-        clearMessage();
+        return;
       }
 
-      if (!checked) {
-        setMessage({ message: "check the box", error: true });
-        clearMessage();
-      }
+      const data = await response.json();
+      console.log("Success:", data);
+      setError(null);
+      setMessage({ message: "🎉 Details added to DB!", error: false });
+
+      clearMessage();
+
+      setChecked(false);
+      // Clear form after successful submission
+      setFormData(initialFormState);
+    } catch (error: any) {
+      setError({
+        statusCode: 500,
+        message: error.message || "An unexpected error occurred",
+      });
     }
   };
 
@@ -104,8 +123,24 @@ export default function Home() {
 
   return (
     <div className="flex justify-center items-center h-screen w-screen bg-blue-50">
-      {openModal && <Modal handleClick={handleModal} />}
-      <main className="z-40 flex flex-col items-center p-6 bg-white w-9/12 shadow rounded-lg">
+      {openModal && (
+        <Modal handleClick={handleModal}>
+          <h3 className="text-blue-900 font-semibold text-lg">Absolutley Nothing!</h3>
+          <span className="text-gray-800 text-sm">
+            Dont worry, nothing will happen with the data you add inside the
+            form. It will sit safe and sound in a MongoDB which is used
+            only for this project.{" "}
+          </span>
+          <Button
+            className="m-0 m-auto"
+            text="Close"
+            type="button"
+            variant="primary"
+            handleClick={handleModal}
+          />
+        </Modal>
+      )}
+      <main className="z-30 flex flex-col items-center p-6 bg-white w-9/12 shadow rounded-lg">
         <h1 className="text-lg font-sans font-semibold p-4 text-blue-900">
           Contact form
         </h1>
@@ -136,15 +171,31 @@ export default function Home() {
             value={formData.contact}
             type="email"
           />
-          {message && (
-            <span className={classNames("text-center", message.error ? "text-red-700"  : "text-green-900")}>{message.message}</span>
+          {error ? (
+            <ErrorMessage
+              statusCode={error.statusCode}
+              message={error.message}
+            />
+          ) : (
+            message.message && (
+              <div
+                className={`px-4 py-3 rounded relative ${
+                  message.error
+                    ? "bg-red-50 text-red-700"
+                    : "bg-green-50 text-green-700"
+                }`}
+              >
+                {message.message}
+              </div>
+            )
           )}
           <div className="text-blue-900 m-auto m-0 flex items-center">
             <Checkbox handleOnChange={handleCheckbox} />
             <span className="pl-2 text-xs">
-              To find out what happens with the data you enter{" "}
+              By ticking the box you agree the details you enter can be added to
+              a database.{" "}
               <a className="underline cursor-pointer" onClick={handleModal}>
-                Click here
+                Find out more
               </a>
             </span>
           </div>

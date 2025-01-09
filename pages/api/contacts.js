@@ -21,11 +21,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Check for existing contact with same name or contact number
+    const existingContact = await collection.findOne({
+      name: data.name,
+      occupation: data.occupation,
+    });
+
+    if (existingContact) {
+      return res.status(409).json({ message: "duplicate entry" });
+    }
+
     const result = await collection.insertOne({
       name: data.name,
       occupation: data.occupation,
       contact: data.contact,
-      createdAt: new Date(),
     });
 
     return res.status(200).json({
