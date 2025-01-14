@@ -42,6 +42,7 @@ const ErrorMessage = ({ statusCode, message }: ErrorMessageProps) => {
     <div
       className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
       role="alert"
+      data-testid="error-message"
     >
       <strong className="font-bold mr-1">{title}:</strong>
       <span className="block sm:inline">{ defaultMessage || message}</span>

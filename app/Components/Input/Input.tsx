@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 
 export const Input = ({
   value,
@@ -23,9 +23,12 @@ export const Input = ({
   const handleFocus = () => setIsFocused(true);
   const handleBlur = () => setIsFocused(false);
 
+  const id = React.useId();
+
   return (
     <div className="relative">
       <input
+        id={id}
         required={required}
         type={type}
         value={value}
@@ -34,8 +37,10 @@ export const Input = ({
         onBlur={handleBlur}
         className="w-full border-t-0 border-r-0 border-l-0 px-3 py-2 text-gray-700 border peer focus:outline-none focus:border-blue-900"
         placeholder={placeholder}
+        aria-label={label}
       />
       <label
+        htmlFor={id}
         className={`
         absolute left-3 transition-all duration-200 pointer-events-none
         peer-placeholder-shown:text-gray-400

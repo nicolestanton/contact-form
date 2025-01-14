@@ -8,6 +8,7 @@ import { Checkbox } from "./Components/CheckBox/CheckBox";
 import { Modal } from "./Components/Modal/Modal";
 import { validateEmail } from "./Helpers";
 import ErrorMessage from "./Components/ErrorMessage/ErrorMessage";
+import { Form } from "./Components/Form/Form";
 
 type FormData = {
   name: string;
@@ -38,7 +39,7 @@ export default function Home() {
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormState);
-  const [checked, setChecked] = useState<boolean>();
+  const [checked, setChecked] = useState<boolean>(false);
   const [message, setMessage] = useState<messageTypes>(messageState);
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [error, setError] = useState<errorType>();
@@ -58,6 +59,10 @@ export default function Home() {
     }, 2000);
   };
 
+  const handleCheckbox = () => {
+    setChecked(!checked);
+  };
+
   const handleFormData = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -72,7 +77,10 @@ export default function Home() {
     }
 
     if (!checked) {
-      setMessage({ message: "🤖 Oops! You forgot to check the checkbox", error: true });
+      setMessage({
+        message: "🤖 Oops! You forgot to check the checkbox",
+        error: true,
+      });
       clearMessage();
       return;
     }
@@ -102,19 +110,15 @@ export default function Home() {
 
       clearMessage();
 
-      setChecked(false);
       // Clear form after successful submission
       setFormData(initialFormState);
+      setChecked(false);
     } catch (error: any) {
       setError({
         statusCode: 500,
         message: error.message || "An unexpected error occurred",
       });
     }
-  };
-
-  const handleCheckbox = () => {
-    setChecked(!checked);
   };
 
   const handleModal = () => {
@@ -125,11 +129,13 @@ export default function Home() {
     <div className="flex justify-center items-center h-screen w-screen bg-blue-50">
       {openModal && (
         <Modal handleClick={handleModal}>
-          <h3 className="text-blue-900 font-semibold text-lg">Absolutley Nothing!</h3>
+          <h3 className="text-blue-900 font-semibold text-lg">
+            Absolutley Nothing!
+          </h3>
           <span className="text-gray-800 text-sm">
             Dont worry, nothing will happen with the data you add inside the
-            form. It will sit safe and sound in a MongoDB which is used
-            only for this project.{" "}
+            form. It will sit safe and sound in a MongoDB which is used only for
+            this project.{" "}
           </span>
           <Button
             className="m-0 m-auto"
@@ -147,10 +153,7 @@ export default function Home() {
         <span className="text-blue-900 text-sm pb-6">
           Welcome 👋! Fill in the form below to add some data to a MongoDB.
         </span>
-        <form
-          onSubmit={handleFormData}
-          className="space-y-4 w-full flex flex-col"
-        >
+        <Form handleSubmit={handleFormData}>
           <Input
             handleOnChange={(e: any) => handleContactInfo(e, "name")}
             label="Full Name"
@@ -162,12 +165,12 @@ export default function Home() {
             handleOnChange={(e: any) => handleContactInfo(e, "occupation")}
             label="Occupation"
             value={formData.occupation}
-            required
             type="text"
           />
           <Input
             handleOnChange={(e: any) => handleContactInfo(e, "contact")}
             label="Email Address"
+            required
             value={formData.contact}
             type="email"
           />
@@ -179,6 +182,7 @@ export default function Home() {
           ) : (
             message.message && (
               <div
+              data-testid="form-message"
                 className={`px-4 py-3 rounded relative ${
                   message.error
                     ? "bg-red-50 text-red-700"
@@ -189,8 +193,8 @@ export default function Home() {
               </div>
             )
           )}
-          <div className="text-blue-900 m-auto m-0 flex items-center">
-            <Checkbox handleOnChange={handleCheckbox} />
+          <div data-testid="agreementNotice" className="text-blue-900 m-auto m-0 flex items-center">
+            <Checkbox handleOnChange={handleCheckbox} checked={checked} />
             <span className="pl-2 text-xs">
               By ticking the box you agree the details you enter can be added to
               a database.{" "}
@@ -199,13 +203,7 @@ export default function Home() {
               </a>
             </span>
           </div>
-          <Button
-            className="m-auto m-0"
-            type="submit"
-            text="Submit"
-            variant="primary"
-          />
-        </form>
+        </Form>
       </main>
     </div>
   );

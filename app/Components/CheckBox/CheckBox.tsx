@@ -3,12 +3,14 @@
 
 export const Checkbox = ({
   handleOnChange,
+  checked
 }: {
   handleOnChange: () => void;
+  checked: boolean;
 }) => {
   return (
     <>
-      <input type="checkbox" onChange={handleOnChange} />
+      <input type="checkbox" checked={checked} onChange={handleOnChange} />
     </>
   );
 };

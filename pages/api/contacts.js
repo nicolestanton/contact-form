@@ -17,14 +17,14 @@ export default async function handler(req, res) {
     const data = req.body;
 
     // validation
-    if (!data.name || !data.occupation) {
+    if (!data.name || !data.contact) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check for existing contact with same name or contact number
+    // Check for existing contact with same name or contact details
     const existingContact = await collection.findOne({
       name: data.name,
-      occupation: data.occupation,
+      contact: data.contact,
     });
 
     if (existingContact) {
